@@ -1,7 +1,7 @@
 param location string = 'northeurope'
-param virtualNetworkName string = 'vnet-gl-1'
-param clusterName string = 'aks-gl-1'
-param kubernetesVersion string = '1.23.8'
+param virtualNetworkName string = 'vnet-lab-aksgitops-1'
+param clusterName string = 'aks-lab-aksgitops-1'
+param kubernetesVersion string = '1.25.6'
 @secure()
 param clusterAdminUserName string
 @secure()
@@ -28,7 +28,7 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2022-01-01' = {
   }
 }
 
-resource aksCluster 'Microsoft.ContainerService/managedClusters@2022-07-02-preview' = {
+resource aksCluster 'Microsoft.ContainerService/managedClusters@2023-05-02-preview' = {
   name: clusterName
   location: location
   identity: {
@@ -73,7 +73,7 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2022-07-02-previ
   }
 }
 
-resource aksFluxExtension 'Microsoft.KubernetesConfiguration/extensions@2022-07-01' = {
+resource aksFluxExtension 'Microsoft.KubernetesConfiguration/extensions@2023-05-01' = {
   name: 'flux'
   scope: aksCluster
   properties: {
@@ -82,7 +82,7 @@ resource aksFluxExtension 'Microsoft.KubernetesConfiguration/extensions@2022-07-
   }
 }
 
-resource aksClusterFluxConfig 'Microsoft.KubernetesConfiguration/fluxConfigurations@2022-07-01' = {
+resource aksClusterFluxConfig 'Microsoft.KubernetesConfiguration/fluxConfigurations@2023-05-01' = {
   name: 'bootstrap'
   scope: aksCluster
   dependsOn: [
@@ -104,7 +104,6 @@ resource aksClusterFluxConfig 'Microsoft.KubernetesConfiguration/fluxConfigurati
     }
     kustomizations: {
       infra: {
-        name: 'infra'
         path: './infrastructure'
         timeoutInSeconds: 300
         syncIntervalInSeconds: 300
@@ -114,7 +113,6 @@ resource aksClusterFluxConfig 'Microsoft.KubernetesConfiguration/fluxConfigurati
         dependsOn: []
       }
       apps:{
-        name: 'apps'
         path: './apps/staging'
         timeoutInSeconds: 300
         syncIntervalInSeconds: 300
