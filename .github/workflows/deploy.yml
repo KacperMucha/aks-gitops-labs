@@ -29,9 +29,9 @@ jobs:
         subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         resourceGroupName: ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
         template: ./env/aks.bicep
-        parameters: |
+        parameters: >
           clusterAdminUserName=${{ secrets.AKS_ADMIN_USERNAME }}
-          sshPublicKey=${{ secrets.AKS_ADMIN_PUBLIC_KEY }}
-        deploymentName: 'deploy-${{ env.GITHUB_RUN_ID }}'
+          sshPublicKey="${{ secrets.AKS_ADMIN_PUBLIC_KEY }}"
+        deploymentName: 'deploy-${{ github.run_id }}'
         failOnStdErr: false
         additionalArguments: '--verbose'
