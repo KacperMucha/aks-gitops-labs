@@ -7,6 +7,7 @@ param clusterAdminUserName string
 @secure()
 param sshPublicKey string
 
+var aksSubnetName = 'snet-aks'
 
 resource virtualNetwork 'Microsoft.Network/virtualNetworks@2022-01-01' = {
   name: virtualNetworkName
@@ -19,7 +20,7 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2022-01-01' = {
     }
     subnets: [
       {
-        name: 'snet-aks'
+        name: aksSubnetName
         properties: {
           addressPrefix: '10.100.20.0/25'
         }
@@ -57,7 +58,9 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2023-05-02-previ
         enableAutoScaling: true
         minCount: 1
         maxCount: 2
-        vnetSubnetID: resourceId('Microsoft.Network/virtualNetworks/subnets', virtualNetworkName, virtualNetwork.properties.subnets[0].name) // virtualNetwork.properties.subnets[0].id
+        // reason for specifying subnet name via a variable instead of an object reference (virtualNetwork.properties.subnets[0].id):
+        // https://github.com/Azure/AKS/issues/695
+        vnetSubnetID: resourceId('Microsoft.Network/virtualNetworks/subnets', virtualNetworkName, aksSubnetName)
       }
     ]
     linuxProfile: {
