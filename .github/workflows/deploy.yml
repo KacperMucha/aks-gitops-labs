@@ -24,6 +24,7 @@ jobs:
         enable-AzPSSession: true
 
     - name: Deploy Bicep
+      id: deploy-bicep
       uses: azure/arm-deploy@v1
       with:
         subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -35,3 +36,39 @@ jobs:
         deploymentName: 'deploy-${{ github.run_id }}'
         failOnStdErr: false
         additionalArguments: '--verbose'
+
+    - uses: azure/aks-set-context@v3
+      with:
+        resource-group: ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
+        cluster-name: ${{ steps.deploy-bicep.outputs.aksClusterName }}
+
+    - name: Setup Flux CLI
+      uses: fluxcd/flux2/action@main
+      with:
+        version: '2.0.1'
+
+    - name: Bootstrap Flux on AKS
+      env:
+        GITHUB_TOKEN: ${{ secrets.FLUX_PAT }}
+      run: |
+        flux bootstrap github \
+        --token-auth \
+        --owner=${{ github.repository_owner }} \
+        --repository=${{ github.event.repository.name }} \
+        --branch=${GITHUB_REF#refs/heads/} \
+        --path=clusters/lab \
+        --private=false \
+        --personal
+
+    - name: Verify cluster reconciliation
+      run: |
+        kubectl -n flux-system wait kustomization/apps --for=condition=ready --timeout=5m
+
+    - name: Debug failure
+      if: failure()
+      run: |
+        kubectl -n flux-system get all
+        kubectl -n flux-system logs deploy/source-controller
+        kubectl -n flux-system logs deploy/kustomize-controller
+        kubectl -n flux-system logs deploy/helm-controller
+        flux get all --all-namespaces
