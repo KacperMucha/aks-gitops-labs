@@ -6,7 +6,7 @@ on:
     - cron: '30 22 * * *'
 
 jobs:
-  deploy:
+  cleanup:
     runs-on: ubuntu-latest
     environment: az
     permissions:
