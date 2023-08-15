@@ -1,0 +1,72 @@
+name: Cleanup
+
+on:
+  push:
+  schedule:
+    - cron: '30 22 * * *'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: az
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        enable-AzPSSession: true
+
+    - name: Cleanup resource group
+      uses: azure/powershell@v1
+      with:
+        azPSVersion: latest
+        inclineScript: |
+          function Clear-AzResourceGroup {
+              [CmdletBinding()]
+              param (
+                  [string]
+                  $ResourceGroupName,
+
+                  [string[]]
+                  $ResourceType
+              )
+
+              begin {
+                  function Get-AzRandomResource {
+                      $resourceList = Get-AzResource -ResourceGroupName $ResourceGroupName
+                      if ($ResourceType) {
+                          $resourceList = $resourceList | Where-Object {
+                              $_.ResourceType -in $ResourceType
+                          }
+                      }
+                      $resourceList | Sort-Object { Get-Random }
+                  }
+              }
+
+              process {
+                  do {
+                      $resources = Get-AzRandomResource
+                      Write-Verbose -Message "Resource count (pre-loop): $($resources.Count)"
+                      foreach ($resource in $resources) {
+                          Write-Verbose -Message "Removing resource $($resource.Name)"
+                          try {
+                              Remove-AzResource -ResourceId $resource.Id -Force -ErrorAction Stop
+                          }
+                          catch {
+                              Write-Verbose -Message $_.Exception.Message
+                          }
+                      }
+                      $resources = Get-AzRandomResource
+                      Write-Verbose -Message "Resource count (post-loop): $($resources.Count)"
+                  } while ($resources.Count -ne 0)
+              }
+          }
+          Clear-AzResourceGroup -ResourceGroupName '${{ vars.AZURE_RESOURCE_GROUP_NAME }}'
