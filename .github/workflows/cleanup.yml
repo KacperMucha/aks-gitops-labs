@@ -28,7 +28,7 @@ jobs:
       uses: azure/powershell@v1
       with:
         azPSVersion: latest
-        inclineScript: |
+        inlineScript: |
           function Clear-AzResourceGroup {
               [CmdletBinding()]
               param (
