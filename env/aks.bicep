@@ -9,11 +9,11 @@ param sshPublicKey string
 
 var aksSubnetName = 'snet-aks'
 
-resource hubVirtualNetwork 'Microsoft.Network/virtualNetworks@2023-05-01' existing = {
+resource hubVirtualNetwork 'Microsoft.Network/virtualNetworks@2022-01-01' existing = {
   name: 'vnet-lab-hub-1'
 }
 
-resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-05-01' = {
+resource virtualNetwork 'Microsoft.Network/virtualNetworks@2022-01-01' = {
   name: virtualNetworkName
   location: location
   properties: {
