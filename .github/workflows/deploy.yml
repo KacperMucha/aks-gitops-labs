@@ -22,8 +22,19 @@ jobs:
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         enable-AzPSSession: true
 
-    - name: Deploy Bicep
-      id: deploy-bicep
+    - name: Deploy Hub
+      id: deploy-hub
+      uses: azure/arm-deploy@v1
+      with:
+        subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        resourceGroupName: ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
+        template: ./env/hub.bicep
+        deploymentName: 'deploy-${{ github.run_id }}'
+        failOnStdErr: false
+        additionalArguments: '--verbose'
+
+    - name: Deploy AKS
+      id: deploy-aks
       uses: azure/arm-deploy@v1
       with:
         subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}

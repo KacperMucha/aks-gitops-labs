@@ -9,7 +9,11 @@ param sshPublicKey string
 
 var aksSubnetName = 'snet-aks'
 
-resource virtualNetwork 'Microsoft.Network/virtualNetworks@2022-01-01' = {
+resource hubVirtualNetwork 'Microsoft.Network/virtualNetworks@2023-05-01' existing = {
+  name: 'vnet-lab-hub-1'
+}
+
+resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-05-01' = {
   name: virtualNetworkName
   location: location
   properties: {
@@ -26,6 +30,20 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2022-01-01' = {
         }
       }
     ]
+  }
+}
+
+resource symbolicname 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2023-04-01' = {
+  name: 'peering-to-hub-vnet'
+  parent: virtualNetwork
+  properties: {
+    allowVirtualNetworkAccess: true
+    allowForwardedTraffic: false
+    allowGatewayTransit: false
+    useRemoteGateways: false
+    remoteVirtualNetwork: {
+      id: hubVirtualNetwork.id
+    }
   }
 }
 
