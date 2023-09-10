@@ -50,7 +50,7 @@ jobs:
     - uses: azure/aks-set-context@v3
       with:
         resource-group: ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
-        cluster-name: ${{ steps.deploy-bicep.outputs.aksClusterName }}
+        cluster-name: ${{ steps.deploy-aks.outputs.aksClusterName }}
 
     - name: Setup Flux CLI
       uses: fluxcd/flux2/action@main
