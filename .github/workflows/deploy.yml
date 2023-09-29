@@ -67,7 +67,7 @@ jobs:
         --owner=${{ github.repository_owner }} \
         --repository=${{ github.event.repository.name }} \
         --branch=${GITHUB_REF#refs/heads/} \
-        --path=clusters/lab \
+        --path=clusters/dev \
         --private=false \
         --personal
 
