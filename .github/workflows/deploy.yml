@@ -47,7 +47,8 @@ jobs:
         failOnStdErr: false
         additionalArguments: '--verbose'
 
-    - uses: azure/aks-set-context@v3
+    - name: Set AKS context
+      uses: azure/aks-set-context@v3
       with:
         resource-group: ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
         cluster-name: ${{ steps.deploy-aks.outputs.aksClusterName }}
