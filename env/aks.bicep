@@ -1,7 +1,7 @@
 param location string = 'northeurope'
 param virtualNetworkName string = 'vnet-aksgitops-dev-1'
 param clusterName string = 'aks-aksgitops-dev-1'
-param kubernetesVersion string = '1.25.6'
+param kubernetesVersion string = '1.27.3'
 @secure()
 param clusterAdminUserName string
 @secure()
