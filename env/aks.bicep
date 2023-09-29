@@ -13,7 +13,7 @@ resource hubVirtualNetwork 'Microsoft.Network/virtualNetworks@2022-01-01' existi
   name: 'vnet-hub-shared-1'
 }
 
-resource virtualNetwork 'Microsoft.Network/virtualNetworks@2022-01-01' = {
+resource aksVirtualNetwork 'Microsoft.Network/virtualNetworks@2022-01-01' = {
   name: virtualNetworkName
   location: location
   properties: {
@@ -33,9 +33,9 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2022-01-01' = {
   }
 }
 
-resource symbolicname 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2023-04-01' = {
+resource hubVnetPeering 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2023-04-01' = {
   name: 'peering-to-hub-vnet'
-  parent: virtualNetwork
+  parent: aksVirtualNetwork
   properties: {
     allowVirtualNetworkAccess: true
     allowForwardedTraffic: false
