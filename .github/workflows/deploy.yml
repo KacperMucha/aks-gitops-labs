@@ -1,4 +1,4 @@
-name: Deploy AKS
+name: Deploy Infra
 
 on:
   workflow_dispatch:
@@ -22,8 +22,19 @@ jobs:
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         enable-AzPSSession: true
 
-    - name: Deploy Bicep
-      id: deploy-bicep
+    - name: Deploy Hub
+      id: deploy-hub
+      uses: azure/arm-deploy@v1
+      with:
+        subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        resourceGroupName: ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
+        template: ./env/hub.bicep
+        deploymentName: 'deploy-${{ github.run_id }}'
+        failOnStdErr: false
+        additionalArguments: '--verbose'
+
+    - name: Deploy AKS
+      id: deploy-aks
       uses: azure/arm-deploy@v1
       with:
         subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -36,10 +47,11 @@ jobs:
         failOnStdErr: false
         additionalArguments: '--verbose'
 
-    - uses: azure/aks-set-context@v3
+    - name: Set AKS context
+      uses: azure/aks-set-context@v3
       with:
         resource-group: ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
-        cluster-name: ${{ steps.deploy-bicep.outputs.aksClusterName }}
+        cluster-name: ${{ steps.deploy-aks.outputs.aksClusterName }}
 
     - name: Setup Flux CLI
       uses: fluxcd/flux2/action@main
@@ -55,7 +67,7 @@ jobs:
         --owner=${{ github.repository_owner }} \
         --repository=${{ github.event.repository.name }} \
         --branch=${GITHUB_REF#refs/heads/} \
-        --path=clusters/lab \
+        --path=clusters/dev \
         --private=false \
         --personal
 

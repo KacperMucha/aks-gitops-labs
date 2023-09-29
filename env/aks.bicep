@@ -1,7 +1,7 @@
 param location string = 'northeurope'
-param virtualNetworkName string = 'vnet-lab-aksgitops-1'
-param clusterName string = 'aks-lab-aksgitops-1'
-param kubernetesVersion string = '1.25.6'
+param virtualNetworkName string = 'vnet-aksgitops-dev-1'
+param clusterName string = 'aks-aksgitops-dev-1'
+param kubernetesVersion string = '1.27.3'
 @secure()
 param clusterAdminUserName string
 @secure()
@@ -9,7 +9,11 @@ param sshPublicKey string
 
 var aksSubnetName = 'snet-aks'
 
-resource virtualNetwork 'Microsoft.Network/virtualNetworks@2022-01-01' = {
+resource hubVirtualNetwork 'Microsoft.Network/virtualNetworks@2022-01-01' existing = {
+  name: 'vnet-hub-shared-1'
+}
+
+resource aksVirtualNetwork 'Microsoft.Network/virtualNetworks@2022-01-01' = {
   name: virtualNetworkName
   location: location
   properties: {
@@ -26,6 +30,34 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2022-01-01' = {
         }
       }
     ]
+  }
+}
+
+resource hubVnetPeering 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2023-04-01' = {
+  name: '${aksVirtualNetwork.name}-to-${hubVirtualNetwork.name}'
+  parent: aksVirtualNetwork
+  properties: {
+    allowVirtualNetworkAccess: true
+    allowForwardedTraffic: false
+    allowGatewayTransit: false
+    useRemoteGateways: false
+    remoteVirtualNetwork: {
+      id: hubVirtualNetwork.id
+    }
+  }
+}
+
+resource aksVnetPeering 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2023-04-01' = {
+  name: '${hubVirtualNetwork.name}-to-${aksVirtualNetwork.name}'
+  parent: hubVirtualNetwork
+  properties: {
+    allowVirtualNetworkAccess: true
+    allowForwardedTraffic: false
+    allowGatewayTransit: false
+    useRemoteGateways: false
+    remoteVirtualNetwork: {
+      id: aksVirtualNetwork.id
+    }
   }
 }
 
