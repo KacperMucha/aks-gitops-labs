@@ -34,7 +34,7 @@ resource aksVirtualNetwork 'Microsoft.Network/virtualNetworks@2022-01-01' = {
 }
 
 resource hubVnetPeering 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2023-04-01' = {
-  name: 'peering-to-hub-vnet'
+  name: '${aksVirtualNetwork.name}-to-${hubVirtualNetwork.name}'
   parent: aksVirtualNetwork
   properties: {
     allowVirtualNetworkAccess: true
@@ -43,6 +43,20 @@ resource hubVnetPeering 'Microsoft.Network/virtualNetworks/virtualNetworkPeering
     useRemoteGateways: false
     remoteVirtualNetwork: {
       id: hubVirtualNetwork.id
+    }
+  }
+}
+
+resource aksVnetPeering 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2023-04-01' = {
+  name: '${hubVirtualNetwork.name}-to-${aksVirtualNetwork.name}'
+  parent: hubVirtualNetwork
+  properties: {
+    allowVirtualNetworkAccess: true
+    allowForwardedTraffic: false
+    allowGatewayTransit: false
+    useRemoteGateways: false
+    remoteVirtualNetwork: {
+      id: aksVirtualNetwork.id
     }
   }
 }
