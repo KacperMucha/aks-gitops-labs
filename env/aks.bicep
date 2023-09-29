@@ -1,6 +1,6 @@
 param location string = 'northeurope'
-param virtualNetworkName string = 'vnet-lab-aksgitops-1'
-param clusterName string = 'aks-lab-aksgitops-1'
+param virtualNetworkName string = 'vnet-aksgitops-dev-1'
+param clusterName string = 'aks-aksgitops-dev-1'
 param kubernetesVersion string = '1.25.6'
 @secure()
 param clusterAdminUserName string
@@ -10,7 +10,7 @@ param sshPublicKey string
 var aksSubnetName = 'snet-aks'
 
 resource hubVirtualNetwork 'Microsoft.Network/virtualNetworks@2022-01-01' existing = {
-  name: 'vnet-lab-hub-1'
+  name: 'vnet-hub-shared-1'
 }
 
 resource virtualNetwork 'Microsoft.Network/virtualNetworks@2022-01-01' = {

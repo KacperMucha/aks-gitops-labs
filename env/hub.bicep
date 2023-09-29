@@ -1,5 +1,5 @@
 param location string = 'northeurope'
-param virtualNetworkName string = 'vnet-lab-hub-1'
+param virtualNetworkName string = 'vnet-hub-shared-1'
 
 resource virtualNetwork 'Microsoft.Network/virtualNetworks@2022-01-01' = {
   name: virtualNetworkName
