@@ -1,4 +1,6 @@
-param location string = 'northeurope'
+param location string = resourceGroup().location
+param keyVaultName string = 'kv-aksgitops-dev-1'
+param managedIdentityName string = 'id-aksgitops-dev-1'
 param virtualNetworkName string = 'vnet-aksgitops-dev-1'
 param clusterName string = 'aks-aksgitops-dev-1'
 param kubernetesVersion string = '1.27.3'
@@ -108,61 +110,59 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2023-05-02-previ
   }
 }
 
+resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' existing = {
+  name: keyVaultName
+}
 
-// Resources below are disabled for now. The extension deploys an old version of Flux.
+resource fluxPatSecret 'Microsoft.KeyVault/vaults/secrets@2023-02-01' existing = {
+  name: 'flux-pat'
+  parent: keyVault
+}
 
-// resource aksFluxExtension 'Microsoft.KubernetesConfiguration/extensions@2023-05-01' = {
-//   name: 'flux'
-//   scope: aksCluster
-//   properties: {
-//     extensionType: 'microsoft.flux'
-//     autoUpgradeMinorVersion: true
-//   }
-// }
+resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+  name: managedIdentityName
+  location: location
+}
 
-// resource aksClusterFluxConfig 'Microsoft.KubernetesConfiguration/fluxConfigurations@2023-05-01' = {
-//   name: 'bootstrap'
-//   scope: aksCluster
-//   dependsOn: [
-//     aksFluxExtension
-//   ]
-//   properties: {
-//     scope: 'cluster'
-//     namespace: 'cluster-config'
-//     suspend: false
-//     configurationProtectedSettings: {}
-//     sourceKind: 'GitRepository'
-//     gitRepository: {
-//       url: 'https://github.com/Azure/gitops-flux2-kustomize-helm-mt'
-//       timeoutInSeconds: 300
-//       syncIntervalInSeconds: 300
-//       repositoryRef: {
-//         branch: 'main'
-//       }
-//     }
-//     kustomizations: {
-//       infra: {
-//         path: './infrastructure'
-//         timeoutInSeconds: 300
-//         syncIntervalInSeconds: 300
-//         retryIntervalInSeconds: 300
-//         force: false
-//         prune: true
-//         dependsOn: []
-//       }
-//       apps:{
-//         path: './apps/staging'
-//         timeoutInSeconds: 300
-//         syncIntervalInSeconds: 300
-//         retryIntervalInSeconds: 300
-//         force: false
-//         prune: true
-//         dependsOn: [
-//           'infra'
-//         ]
-//       }
-//     }
-//   }
-// }
+resource managedIdentityKeyVaultAccess 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(subscription().subscriptionId, resourceGroup().id, 'ManagedIdentityKeyVaultAccess')
+  scope: fluxPatSecret
+  properties: {
+    principalType: 'ServicePrincipal'
+    principalId: managedIdentity.properties.principalId
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6') // Key Vault Secrets User
+  }
+}
+
+resource managedIdentityAksClusterUserAccess 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(subscription().subscriptionId, resourceGroup().id, 'ManagedIdentityAksClusterUserAccess')
+  scope: aksCluster
+  properties: {
+    principalType: 'ServicePrincipal'
+    principalId: managedIdentity.properties.principalId
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4abbcc35-e782-43d8-92c5-2d3f1bd2253f') // Azure Kubernetes Service Cluster User Role
+  }
+}
+
+resource fluxBootstrapScript 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
+  name: 'ds-fluxbootstrap-dev-1'
+  location: location
+  kind: 'AzurePowerShell'
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '/subscriptions/${subscription().subscriptionId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/${managedIdentity.name}': {}
+    }
+  }
+  properties: {
+    azPowerShellVersion: '10.3.0'
+    retentionInterval: 'PT1H'
+    scriptContent: loadTextContent('Initialize-Flux.ps1')
+  }
+}
+
+output secretVersion string = fluxBootstrapScript.properties.outputs.secretVersion
+output fluxVersion string = fluxBootstrapScript.properties.outputs.fluxVersion
+output kubectlVersion string = fluxBootstrapScript.properties.outputs.kubectlVersion
 
 output aksClusterName string = aksCluster.name
