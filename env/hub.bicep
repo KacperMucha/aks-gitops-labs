@@ -1,4 +1,4 @@
-param location string = 'northeurope'
+param location string = resourceGroup().location
 param virtualNetworkName string = 'vnet-hub-shared-1'
 
 resource virtualNetwork 'Microsoft.Network/virtualNetworks@2022-01-01' = {
